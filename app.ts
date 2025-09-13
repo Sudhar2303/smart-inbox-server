@@ -11,6 +11,7 @@ import googleaAuthRoutes from './routes/googleAuthRoute'
 import gmailRoutes from './routes/emailRoute'
 import draftRoutes from './routes/draftRoute'
 import userRoute from './routes/userRoute'
+import calendarRoute from './routes/calendarRoute'
 
 const app: Application = express()
 app.use(passport.initialize())
@@ -32,9 +33,10 @@ app.use((error: Error, request: Request, response: Response, next: NextFunction)
 
 app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/auth/google', googleaAuthRoutes)
-app.use('/api/v1/gmail', gmailRoutes) 
+app.use('/api/v1/gmail/emails', gmailRoutes) 
 app.use('/api/v1/gmail/draft', draftRoutes) 
 app.use('/api/v1/user',userRoute)
+app.use('/api/v1/calendar',calendarRoute)
 
 export default app
 

@@ -15,7 +15,8 @@ export const authenticateWithGoogle = ( request: Request, response: Response, ne
         "email",
         "https://www.googleapis.com/auth/gmail.readonly",
         "https://www.googleapis.com/auth/gmail.compose",
-        "https://www.googleapis.com/auth/gmail.modify"
+        "https://www.googleapis.com/auth/gmail.modify",
+        "https://www.googleapis.com/auth/calendar"
         ],
         accessType: "offline",
         session: false, 

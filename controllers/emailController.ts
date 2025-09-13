@@ -8,7 +8,6 @@ import { findGeneratedReply, createGeneratedReply } from '../services/generatedR
 import { isReplyWorthyFromHeaders } from '../utils/emailUtils';
 import { generateAIReply, detectMeetingDetails } from '../integrations/aiReplyGenerator';
 import { listEmailsFromGmail, getDraftForMessage, getEmailDetails, getFullMessage } from '../integrations/gmailClient';
-import { checkConflicts, createCalendarEvent } from '../integrations/calendarClient';
 
 const pageTokensMap: Record<string, string[]> = {};
 
@@ -109,35 +108,23 @@ export const getFullEmailDetails = async (request: Request, response: Response) 
 
 export const generateReplyController = async (request: Request, response: Response) => {
   try {
-    const { emailBody, threadId } = request.body;
+    const { emailBody, meetingInfo, status, threadId } = request.body;
     const userId = (request.user as { _id: Types.ObjectId })._id;
 
     if (!emailBody) {
       return response.status(400).send(setResponseBody("Email body is required", "validation_error"));
     }
 
-    const existingReply = await findGeneratedReply(userId, threadId);
-
-    if (existingReply) {
-      return response.status(200).send(setResponseBody("Existing reply found", null, {suggestion: existingReply.suggestion,}));
-    }
+    const plain = await htmlToPlainText(emailBody);
 
     let replyContext = "";
-    let meetingInfo: any = null;
-
-    const plain = await htmlToPlainText(emailBody)
-    
-    meetingInfo = await detectMeetingDetails(plain);
-
-    if (meetingInfo) {
-      const hasConflict = await checkConflicts(meetingInfo);
-      if (hasConflict) {
-        replyContext = `The requested meeting at ${meetingInfo.startTime} conflicts with another event. Suggest rescheduling.`;
-      } else {
-        await createCalendarEvent(meetingInfo);
-        replyContext = `Meeting scheduled successfully for ${meetingInfo.startTime}.`;
-      }
-    } else {
+    if (status === "available") {
+      replyContext = `Meeting scheduled successfully for ${meetingInfo?.startTime}.`;
+    } 
+    else if (status === "conflict") {
+      replyContext = `The requested meeting at ${meetingInfo?.startTime} conflicts with another event. Suggest rescheduling.`;
+    } 
+    else {
       replyContext = "No meeting detected. Generate a normal reply.";
     }
 
@@ -145,9 +132,15 @@ export const generateReplyController = async (request: Request, response: Respon
 
     await createGeneratedReply(userId, threadId, finalReply);
 
-    return response.status(200).send(setResponseBody("Reply generated successfully", null, { suggestion: finalReply }));
-  
-  } catch (error: any) {
+    return response.status(200).send(
+      setResponseBody("Reply generated successfully", null, {
+        suggestion: finalReply,
+        status,
+        meeting: status === "no" ? null : meetingInfo,
+      })
+    );
+  } 
+  catch (error: any) {
     console.error("Error generating reply:", error);
     return response.status(500).send(setResponseBody(error.message || "Failed to generate reply", "server_error"));
   }

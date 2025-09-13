@@ -4,8 +4,8 @@ import { verifyGoogleUser } from "../middlewares/oauthMiddleware";
 
 const router = Router();
 
-router.get("/emails", verifyGoogleUser, listEmails);
-router.get("/emails/:messageId", verifyGoogleUser, getFullEmailDetails);
-router.post("/emails/aisuggest",verifyGoogleUser, generateReplyController);
+router.get("/", verifyGoogleUser, listEmails);
+router.get("/:messageId", verifyGoogleUser, getFullEmailDetails);
+router.post("/aisuggest",verifyGoogleUser, generateReplyController);
 
 export default router;
